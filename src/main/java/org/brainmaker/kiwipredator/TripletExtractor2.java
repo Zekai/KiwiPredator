@@ -5,7 +5,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.LabeledWord;
@@ -21,13 +25,21 @@ import edu.stanford.nlp.trees.TreebankLanguagePack;
  * This class is to convert the standard penn treebank into the format we want. 
  * Not for the extraction task
  */
-public class TripletExtractor {
+public class TripletExtractor2 {
 	
 	private Integer sencounter;
 	private Integer resCounter;
 	private Integer fullCounter;
 	
-	public TripletExtractor()
+	private enum partType {S,SUB,PRED,OBJ}
+	private static List<String> sSentenceCompatible = Arrays.asList("S");
+	private static List<String> sSubCompatible = Arrays.asList("NP");
+	private static List<String> sPredCompatible = Arrays.asList("VP");
+	private static List<String> sObjCompatible = Arrays.asList("NP", "NNP", "PRP", "ADJP", "PP");
+
+	
+	
+	public TripletExtractor2()
 	{
 		sencounter = 0;
 		resCounter = 0;
@@ -54,80 +66,58 @@ public class TripletExtractor {
 	
 	public void extractorFromTree(Tree t)
 	{
-		/*System.out.println(t.depth());
-		if(t.depth()>10)
-			continue;*/
 		
-		 Tree[] nodes = t.firstChild().children();
+		 Tree[] nodes = t.children();
 		 
-		 LabeledWord res = null;
-		 LabeledWord res1 = null;
-		 LabeledWord res2 = null;
+		 List<LabeledWord> res = new ArrayList<LabeledWord> ();
+		 List<LabeledWord> res1 = new ArrayList<LabeledWord> ();
+		 List<LabeledWord> res2 = new ArrayList<LabeledWord> ();
 		 for(Tree n:nodes)
 		 {
 			 //System.out.println(n.value());
-			 if(n.value().contains("NP"))
-			 {
-				 //System.out.println("SBJ");//block for subject
-				 //if the current node contain only a leaf, regardless of the type
-				 //just choose it as the subject
-				 if(n.depth()==2&&n.numChildren()==1)
-				 {
-					 res = getLeaf(n.firstChild());
-				 }
-				 else
-				 {
-					 Tree SBJnode = getDeepestGroup("NP",n);
-					 
-					 if(SBJnode!=null)
-						 res = extractSubject(SBJnode);
-					 else
-						 res = extractSubject(n);
-				 }
-				
-				 
-				 
-				 //if(res==null)
-					 //err(trainfile,n);
-				 //displayLabeledWord(res);
-			 }
+			if (n.value().contains("NP")) {
+				List<Tree> groups = getAllGroup(false, partType.SUB, n);
+
+				for (Tree g : groups) {
+					LabeledWord w = extractSubject(g);
+					if (w != null)
+						res.add(w);
+				}
+
+			}
 			 else if(n.value().equals("VP"))
 			 {
 				 //System.out.println("PRD");
-				 Tree PRDnode = getDeepestGroup("VP",n);
+				 List<Tree> groups = getAllGroup(false,partType.PRED,n);
 				 
-				 
-				 if(PRDnode!=null)
-					 res1 = extractPredicate(PRDnode);
-				 else
-					 res1 = extractPredicate(n);
-				 
-				//if(res1==null)
-				 //	err(trainfile,n);
-				 //displayLabeledWord(res1);
-				 
-				 
-				 //System.out.println("OBJ");
-				 
-				 
-				 if(PRDnode!=null)
-				 {
-					 if(PRDnode.numChildren()==2&&PRDnode.getChild(1).value().equals("S"))
+				 for(Tree g:groups){
+					 LabeledWord w = extractPredicate(g);
+					 if(w!=null) res1.add(w);
+					 
+					 List<Tree> objgroup = getAllGroup(true,partType.OBJ,g);
+					 
+					 for(Tree obj:objgroup)
 					 {
-						 res2 = extractObject(escapeClause(PRDnode));
+						 LabeledWord  w2 = extractOBJ(obj.value(),obj);
+						if (w2 != null) {
+							res2.add(w2);
+							emit(res,w,w2);
+						} else {
+							res2.add(new LabeledWord());
+							emit(res,w,new LabeledWord());
+						}
 					 }
-					 else
-						 res2 = extractObject(PRDnode);
-				 }
-				 else
-					 res2 = extractObject(n);
+				 } 
 				 
-				//if(res2==null)
-				 //	err(trainfile,n);
-				 //displayLabeledWord(res2);
 			 }			 
 		 }
-		 displayres(res,res1,res2);
+	}
+	
+	private void emit(List<LabeledWord> subs,LabeledWord pred,LabeledWord obj){
+		for(LabeledWord sub:subs){
+			System.out.println(sub.word() +" "+ pred.word() + " "+obj.word());
+		}
+		
 	}
 	
 	public void extractor(String trainfile)
@@ -152,20 +142,19 @@ public class TripletExtractor {
 		}
 	}
 	
+
 	
-	private void displayres(LabeledWord res,LabeledWord res1,LabeledWord res2)
+	
+	private void displayres(List<LabeledWord>  res,List<LabeledWord> res1,List<LabeledWord> res2)
 	{
-		if(res!=null&&res1!=null)
-		{
-			resCounter++;
-			System.out.print(res.word()+" "+res1.word());
-			if(res2!=null)
-			{
-				System.out.println(" "+res2.word());
-				fullCounter++;
-			}
-			else
-				System.out.println();
+		
+		for(LabeledWord sub:res){
+			for(int i=0;i<res1.size();i++){
+				    String verb = res1.get(i).word();
+				    String obj = res2.get(i).word();
+					System.out.println(sub.word() +" "+ verb + " "+obj);
+				}
+			
 		}
 	}
 	
@@ -194,7 +183,7 @@ public class TripletExtractor {
 		System.err.println(filename);
 		node.pennPrint();
 	}
-	
+	/*
 	private Tree getDeepestGroup(String type, Tree n)
 	{
 		Tree firstNodeOfThisType = null;
@@ -213,45 +202,113 @@ public class TripletExtractor {
 			 deepestNodeOfThisType = DeeperSameGroup(type,firstNodeOfThisType);
 		 
 		 return deepestNodeOfThisType;
+	}*/
+	
+	private List<Tree> getAllGroup(boolean findroot, partType type, Tree n){
+		List<Tree> group = new ArrayList<Tree>();
+		Tree firstNodeOfThisType = null;
+		if(findroot){			
+			
+			 for(Tree child:n.children())
+				{
+					if(checkTypeCompatible(type,child.value()))
+					{
+						firstNodeOfThisType = child;
+						break;
+					}
+				}
+		}
+		else{
+			firstNodeOfThisType = n;
+		}
+		
+		if(firstNodeOfThisType==null) return group;
+			
+		for (Tree c : firstNodeOfThisType.children()) {
+			if(checkTypeCompatible(type,c.value()))
+				group.add(c);
+		}
+		
+		if(group.isEmpty()){
+			if(checkTypeCompatible(type,firstNodeOfThisType.value()))
+				group.add(firstNodeOfThisType);
+		}
+		 
+		return group;
+		 
 	}
 	
-	private LabeledWord extractSubject(Tree node)
-	{
-		//the last NN in the first NP of current node
-		
-		
-			Tree lastNN = null;
+	private boolean checkTypeCompatible(partType type, String subType) {
+		switch (type) {
+		case S:
+			return sSentenceCompatible.contains(subType);
+		case SUB:
+			return sSubCompatible.contains(subType);
+		case PRED:
+			return sPredCompatible.contains(subType);
+		case OBJ:
+			return sObjCompatible.contains(subType);
+		default:
+				return false;
+		}
+	}
+	
+	private LabeledWord extractSubject(Tree node) {
+		// the last NN in the first NP of current node
+		if (node.depth() == 2 && node.numChildren() == 1) {
+			return getLeaf(node.firstChild());
+		}
+
+		Tree lastNN = null;
+
+		boolean sameType = true;
+		String NNchain = "";
+		if (node.depth() > 1) {
 			String type = node.firstChild().value();
-			boolean sameType = true;
-			String NNchain = "";
-			for(Tree n:node.children())
-			{
-				if(n.value().startsWith("NN")||n.value().startsWith("PRP"))
+
+			for (Tree n : node.children()) {
+				if (n.value().startsWith("NN") || n.value().startsWith("PRP"))
 					lastNN = n;
-				
-				if(sameType&&n.value().equals(type)&&lastNN!=null)
-				{
+
+				if (sameType && n.value().equals(type) && lastNN != null) {
 					NNchain = NNchain + "_" + getLeaf(n).word();
-				}
-				else
+				} else
 					sameType = false;
-					
+
 			}
-			if(sameType)
-			{
+			if (sameType) {
 				LabeledWord lbw = new LabeledWord(NNchain);
 				return lbw;
 			}
-			if(lastNN!=null)
-				return getLeaf(lastNN);
-			else
-				return null;
+		} else {
+			if (node.value().startsWith("NN") || node.value().startsWith("PRP"))
+				lastNN = node;
+		}
+
+		if (lastNN != null)
+			return getLeaf(lastNN);
+		else
+			return null;
+	}
+	
+	private LabeledWord extractPredicate(Tree node)
+	{
+		
+		boolean foundNP = false;
+		for(Tree child:node)
+		{
+			if(child.value().startsWith("VB"))
+			{
+			 	return getLeaf(child);
+			}
+		}
+		return null;
+		
 	}
 	
 	private LabeledWord extractOBJ(String type,Tree node)
 	{
 		//the last NN in the first NP of current node
-
 		
 			Tree lastNN = null;
 			for(Tree n:node.children())
@@ -272,7 +329,7 @@ public class TripletExtractor {
 						lastNN = n;
 				}
 			}
-			
+	
 			if(lastNN!=null)
 				return getLeaf(lastNN);
 			else
@@ -310,52 +367,8 @@ public class TripletExtractor {
 			System.err.println("Empty result");
 	}
 	
-	private LabeledWord extractPredicate(Tree node)
-	{
-		
-		boolean foundNP = false;
-		for(Tree child:node)
-		{
-			if(child.value().startsWith("VB"))
-			{
-			 	return getLeaf(child);
-			}
-		}
-		return null;
-		
-	}
 	
-	private LabeledWord extractObject(Tree node)
-	{
-		 LabeledWord res = null;
-		 Tree SBJnode = getDeepestGroup("NP",node);
-		 if(SBJnode!=null)
-		 {
-			 res = extractOBJ("NP",SBJnode);
-		 }
-		 else 
-		 {
-			 SBJnode = getDeepestGroup("PP",node);
-			 if(SBJnode!=null)
-			 {
-				 
-				 res = extractOBJ("PP",SBJnode); 
-			 }
-			 else
-			 {
-				 SBJnode = getDeepestGroup("ADJP",node);
-				 if(SBJnode!=null)
-				 {
-					 
-					 res = extractOBJ("ADJP",SBJnode); 
-				 }
-			 }
-		 }
-		 
-		 
-		 
-		 return res;
-	}
+	
 	
 	  public  void Parser(String filename) {
 		    // This option shows loading and sentence-segment and tokenizing
@@ -370,9 +383,13 @@ public class TripletExtractor {
 		    	if(sentence.size()>50)
 		    		continue;
 		      System.out.println(sentence.toString());
-		      Tree parse = lp.apply(sentence);
-		      parse.pennPrint();		      
-		      extractorFromTree(parse);
+		      Tree sen = lp.apply(sentence);
+		      //sen.pennPrint();	
+		      List<Tree> sens = getAllGroup(true, partType.S, sen);
+		      for(Tree s:sens){
+		    	  extractorFromTree(s);
+		      }
+		      //extractorFromTree(sen);
 		    }
 		  }
 	
@@ -393,7 +410,7 @@ public class TripletExtractor {
 
 		
 		
-			TripletExtractor te =  new TripletExtractor();
+			TripletExtractor2 te =  new TripletExtractor2();
 			if(type.equals("-r"))
 			{
 				te.Parser(path);

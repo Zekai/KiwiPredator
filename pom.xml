@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.brainmaker.kiwipredator</groupId>
   <artifactId>KiwiPredator</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
   <description>A predicate calculus extractor. </description>
   <dependencies>
 		<dependency>
