@@ -76,7 +76,8 @@ public class TripletExtractor2 {
 		 {
 			 //System.out.println(n.value());
 			if (n.value().contains("NP")) {
-				List<Tree> groups = getAllGroup(false, partType.SUB, n);
+				List<Tree> groups = new ArrayList<Tree>();
+				getAllGroup(groups,false, partType.SUB, n);
 
 				for (Tree g : groups) {
 					LabeledWord w = extractSubject(g);
@@ -88,15 +89,16 @@ public class TripletExtractor2 {
 			 else if(n.value().equals("VP"))
 			 {
 				 //System.out.println("PRD");
-				 List<Tree> groups = getAllGroup(false,partType.PRED,n);
+				 List<Tree> groups = new ArrayList<Tree>();
+				 getAllGroup(groups,false,partType.PRED,n);
 				 
 				 for(Tree g:groups){
 					 LabeledWord w = extractPredicate(g);
 					 if(w!=null) res1.add(w);
+					 List<Tree> groups2 = new ArrayList<Tree>();
+					 getAllGroup(groups2,true,partType.OBJ,g);
 					 
-					 List<Tree> objgroup = getAllGroup(true,partType.OBJ,g);
-					 
-					 for(Tree obj:objgroup)
+					 for(Tree obj:groups2)
 					 {
 						 LabeledWord  w2 = extractOBJ(obj.value(),obj);
 						if (w2 != null) {
@@ -204,8 +206,7 @@ public class TripletExtractor2 {
 		 return deepestNodeOfThisType;
 	}*/
 	
-	private List<Tree> getAllGroup(boolean findroot, partType type, Tree n){
-		List<Tree> group = new ArrayList<Tree>();
+	private void getAllGroup(List<Tree> res,boolean findroot, partType type, Tree n){
 		Tree firstNodeOfThisType = null;
 		if(findroot){			
 			
@@ -221,20 +222,20 @@ public class TripletExtractor2 {
 		else{
 			firstNodeOfThisType = n;
 		}
-		
-		if(firstNodeOfThisType==null) return group;
-			
+		if(firstNodeOfThisType==null) return;
+		boolean temp = false;
 		for (Tree c : firstNodeOfThisType.children()) {
+			
 			if(checkTypeCompatible(type,c.value()))
-				group.add(c);
+			{
+				temp = true;
+				getAllGroup(res,false,type,c);
+			} 
 		}
-		
-		if(group.isEmpty()){
+		if(temp==false){
 			if(checkTypeCompatible(type,firstNodeOfThisType.value()))
-				group.add(firstNodeOfThisType);
+				res.add(firstNodeOfThisType);
 		}
-		 
-		return group;
 		 
 	}
 	
@@ -385,7 +386,8 @@ public class TripletExtractor2 {
 		      System.out.println(sentence.toString());
 		      Tree sen = lp.apply(sentence);
 		      //sen.pennPrint();	
-		      List<Tree> sens = getAllGroup(true, partType.S, sen);
+		      List<Tree> sens = new ArrayList<Tree>();
+		    		  getAllGroup(sens,true, partType.S, sen);
 		      for(Tree s:sens){
 		    	  extractorFromTree(s);
 		      }
