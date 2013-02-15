@@ -447,7 +447,7 @@ public class TripletExtractor2 {
 		    		continue;
 		      System.out.println(sentence.toString());
 		      Tree sen = lp.apply(sentence);
-		      //sen.pennPrint();	
+		      sen.pennPrint();	
 		      List<Tree> sens = new ArrayList<Tree>();
 		      LabeledWord aux = new LabeledWord();
 		      getAllGroup(sens,true, partType.S, sen,aux);
