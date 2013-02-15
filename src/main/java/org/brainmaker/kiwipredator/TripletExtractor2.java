@@ -36,6 +36,9 @@ public class TripletExtractor2 {
 	private static List<String> sSubCompatible = Arrays.asList("NP");
 	private static List<String> sPredCompatible = Arrays.asList("VP");
 	private static List<String> sObjCompatible = Arrays.asList("NP", "NNP", "PRP", "ADJP", "PP");
+	
+	private static List<String> sPredAux = Arrays.asList("VBP","VBZ");
+	private static List<String> sObjAux = Arrays.asList("IN");
 
 	
 	
@@ -77,7 +80,8 @@ public class TripletExtractor2 {
 			 //System.out.println(n.value());
 			if (n.value().contains("NP")) {
 				List<Tree> groups = new ArrayList<Tree>();
-				getAllGroup(groups,false, partType.SUB, n);
+				LabeledWord aux = new LabeledWord();
+				getAllGroup(groups,false, partType.SUB, n, aux );
 
 				for (Tree g : groups) {
 					LabeledWord w = extractSubject(g);
@@ -90,23 +94,25 @@ public class TripletExtractor2 {
 			 {
 				 //System.out.println("PRD");
 				 List<Tree> groups = new ArrayList<Tree>();
-				 getAllGroup(groups,false,partType.PRED,n);
+				 LabeledWord aux = new LabeledWord();
+				 getAllGroup(groups,false,partType.PRED,n,aux);
 				 
 				 for(Tree g:groups){
 					 LabeledWord w = extractPredicate(g);
 					 if(w!=null) res1.add(w);
 					 List<Tree> groups2 = new ArrayList<Tree>();
-					 getAllGroup(groups2,true,partType.OBJ,g);
+					 LabeledWord aux2 = new LabeledWord();
+					 getAllGroup(groups2,true,partType.OBJ,g,aux2);
 					 
 					 for(Tree obj:groups2)
 					 {
 						 LabeledWord  w2 = extractOBJ(obj.value(),obj);
 						if (w2 != null) {
 							res2.add(w2);
-							emit(res,w,w2);
+							emit(res,aux,w,aux2,w2);
 						} else {
 							res2.add(new LabeledWord());
-							emit(res,w,new LabeledWord());
+							emit(res,aux,w,aux2,new LabeledWord());
 						}
 					 }
 				 } 
@@ -115,9 +121,9 @@ public class TripletExtractor2 {
 		 }
 	}
 	
-	private void emit(List<LabeledWord> subs,LabeledWord pred,LabeledWord obj){
+	private void emit(List<LabeledWord> subs,LabeledWord predaux,LabeledWord pred,LabeledWord ObjAux,LabeledWord obj){
 		for(LabeledWord sub:subs){
-			System.out.println(sub.word() +" "+ pred.word() + " "+obj.word());
+			System.out.println(sub.word() +" "+(predaux.word()==null?"":predaux.word()+"_")+ pred.word() +(ObjAux.word()==null?"":"_"+ObjAux.word())+ " "+obj.word());
 		}
 		
 	}
@@ -206,37 +212,47 @@ public class TripletExtractor2 {
 		 return deepestNodeOfThisType;
 	}*/
 	
-	private void getAllGroup(List<Tree> res,boolean findroot, partType type, Tree n){
+	private void getAllGroup(List<Tree> res,boolean findroot, partType type, Tree n,LabeledWord aux){
 		Tree firstNodeOfThisType = null;
-		if(findroot){			
-			
-			 for(Tree child:n.children())
-				{
-					if(checkTypeCompatible(type,child.value()))
-					{
-						firstNodeOfThisType = child;
-						break;
-					}
+		if (findroot) {
+
+			for (Tree child : n.children()) {
+				if (checkTypeCompatible(type, child.value())) {
+					firstNodeOfThisType = child;
+					break;
 				}
+			}
 		}
 		else{
 			firstNodeOfThisType = n;
 		}
 		if(firstNodeOfThisType==null) return;
-		boolean temp = false;
+		
+		boolean hasPart = false;
+		LabeledWord l = new LabeledWord();
 		for (Tree c : firstNodeOfThisType.children()) {
 			
-			if(checkTypeCompatible(type,c.value()))
-			{
-				temp = true;
-				getAllGroup(res,false,type,c);
-			} 
+			if (checkTypeCompatible(type, c.value())) {
+				hasPart = true;
+				if(l.word()!=null){//we only do side effect of aux when there is embedded group
+					aux.setWord(l.word());
+					aux.setTag(l.tag());
+					aux.setValue(l.value());
+				}
+				getAllGroup(res, false, type, c, aux);
+			} else {
+				if (checkTypeAux(type, c.value())) {
+					l = getLeaf(c);
+				}
+			}
 		}
-		if(temp==false){
+		
+		if(hasPart==false){
 			if(checkTypeCompatible(type,firstNodeOfThisType.value()))
+			{
 				res.add(firstNodeOfThisType);
+			}
 		}
-		 
 	}
 	
 	private boolean checkTypeCompatible(partType type, String subType) {
@@ -249,6 +265,21 @@ public class TripletExtractor2 {
 			return sPredCompatible.contains(subType);
 		case OBJ:
 			return sObjCompatible.contains(subType);
+		default:
+				return false;
+		}
+	}
+	
+	private boolean checkTypeAux(partType type,String subType){
+		switch (type) {
+		case S:
+			return false;
+		case SUB:
+			return false;
+		case PRED:
+			return sPredAux.contains(subType);
+		case OBJ:
+			return sObjAux.contains(subType);
 		default:
 				return false;
 		}
@@ -385,9 +416,10 @@ public class TripletExtractor2 {
 		    		continue;
 		      System.out.println(sentence.toString());
 		      Tree sen = lp.apply(sentence);
-		      //sen.pennPrint();	
+		      sen.pennPrint();	
 		      List<Tree> sens = new ArrayList<Tree>();
-		    		  getAllGroup(sens,true, partType.S, sen);
+		      LabeledWord aux = new LabeledWord();
+		      getAllGroup(sens,true, partType.S, sen,aux);
 		      for(Tree s:sens){
 		    	  extractorFromTree(s);
 		      }
