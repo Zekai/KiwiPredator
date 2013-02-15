@@ -32,10 +32,30 @@ public class TripletExtractor2 {
 	private Integer fullCounter;
 	
 	private enum partType {S,SUB,PRED,OBJ}
-	private static List<String> sSentenceCompatible = Arrays.asList("S");
-	private static List<String> sSubCompatible = Arrays.asList("NP");
-	private static List<String> sPredCompatible = Arrays.asList("VP");
-	private static List<String> sObjCompatible = Arrays.asList("NP", "NNP", "PRP", "ADJP", "PP");
+	private static Map<String,Integer> sSentenceCompatible;
+	private static Map<String,Integer> sSubCompatible;
+	private static Map<String,Integer> sPredCompatible;
+	private static Map<String,Integer> sObjCompatible;
+	private static final Integer DEFAULT_SATIS_LEVEL =  10;
+	
+	static {
+		sSentenceCompatible = new Hashtable<String,Integer>();
+		sSubCompatible = new Hashtable<String,Integer>();
+		sPredCompatible = new Hashtable<String,Integer>();
+		sObjCompatible = new Hashtable<String,Integer>();
+		
+		// we use integer to indicate the satisfaction level, 1 is the best.
+		// when iterating, if we've already have a group with level x, we will not accept other groups higher than that level.
+		// make sure that all levels are smaller than DEFAULT_SATIS_LEVEL, otherwise they won't be accepted at all
+		sSentenceCompatible.put("S", 1);
+		sSubCompatible.put("NP", 1);
+		sPredCompatible.put("VP", 1);
+		sObjCompatible.put("NP", 1);
+		sObjCompatible.put("NNP", 2);
+		sObjCompatible.put("PRP", 3);
+		sObjCompatible.put("ADJP", 3);
+		sObjCompatible.put("PP", 3);
+	}
 	
 	private static List<String> sPredAux = Arrays.asList("VBP","VBZ");
 	private static List<String> sObjAux = Arrays.asList("IN");
@@ -217,7 +237,7 @@ public class TripletExtractor2 {
 		if (findroot) {
 
 			for (Tree child : n.children()) {
-				if (checkTypeCompatible(type, child.value())) {
+				if (checkTypeCompatible(type, child.value())<DEFAULT_SATIS_LEVEL) {
 					firstNodeOfThisType = child;
 					break;
 				}
@@ -230,9 +250,11 @@ public class TripletExtractor2 {
 		
 		boolean hasPart = false;
 		LabeledWord l = new LabeledWord();
+		Integer acceptLevel = DEFAULT_SATIS_LEVEL;
 		for (Tree c : firstNodeOfThisType.children()) {
-			
-			if (checkTypeCompatible(type, c.value())) {
+			int r = checkTypeCompatible(type, c.value());
+			if (r<=acceptLevel) {
+				acceptLevel = r;
 				hasPart = true;
 				if(l.word()!=null){//we only do side effect of aux when there is embedded group
 					aux.setWord(l.word());
@@ -240,6 +262,7 @@ public class TripletExtractor2 {
 					aux.setValue(l.value());
 				}
 				getAllGroup(res, false, type, c, aux);
+				//if(r==1) break;// if we got the first choice group, stop iterating other compatible group
 			} else {
 				if (checkTypeAux(type, c.value())) {
 					l = getLeaf(c);
@@ -248,26 +271,34 @@ public class TripletExtractor2 {
 		}
 		
 		if(hasPart==false){
-			if(checkTypeCompatible(type,firstNodeOfThisType.value()))
+			if(checkTypeCompatible(type,firstNodeOfThisType.value())<DEFAULT_SATIS_LEVEL)
 			{
 				res.add(firstNodeOfThisType);
 			}
 		}
 	}
 	
-	private boolean checkTypeCompatible(partType type, String subType) {
+	private Integer checkTypeCompatible(partType type, String subType) {
+		Integer result = null;
 		switch (type) {
 		case S:
-			return sSentenceCompatible.contains(subType);
+			result =   sSentenceCompatible.get(subType);
+			break;
 		case SUB:
-			return sSubCompatible.contains(subType);
+			result =  sSubCompatible.get(subType);
+			break;
 		case PRED:
-			return sPredCompatible.contains(subType);
+			result = sPredCompatible.get(subType);
+			break;
 		case OBJ:
-			return sObjCompatible.contains(subType);
+			result =  sObjCompatible.get(subType);
+			break;
 		default:
-				return false;
+			break;
 		}
+		if(result==null) return Integer.MAX_VALUE;
+		else
+			return result;
 	}
 	
 	private boolean checkTypeAux(partType type,String subType){
@@ -416,7 +447,7 @@ public class TripletExtractor2 {
 		    		continue;
 		      System.out.println(sentence.toString());
 		      Tree sen = lp.apply(sentence);
-		      sen.pennPrint();	
+		      //sen.pennPrint();	
 		      List<Tree> sens = new ArrayList<Tree>();
 		      LabeledWord aux = new LabeledWord();
 		      getAllGroup(sens,true, partType.S, sen,aux);
