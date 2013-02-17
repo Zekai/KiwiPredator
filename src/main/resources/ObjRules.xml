@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Rules priority="3">
+	<Rule priority="1">
+		<Parent>NP</Parent>
+		<Children relation="disjunction">
+			<Child>NN</Child>
+			<Child>NNP</Child>
+			<Child>NNS</Child>
+		</Children>
+	</Rule>
+		<Rule priority="2">
+		<Parent>ADVP</Parent>
+		<Children relation="conjunction">
+			<Child>RB</Child>
+		</Children>
+	</Rule>
+		<Rule priority="2">
+		<Parent>ADJP</Parent>
+		<Children relation="conjunction">
+			<Child>JJ</Child>
+		</Children>
+	</Rule>
+</Rules>

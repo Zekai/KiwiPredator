@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flows priority="1">
+	<Flow priority="1">
+		<Whole>S</Whole>
+		<Parts relation="conjunction">
+			<Part>SubRules</Part>
+			<Part>PredObj</Part>
+		</Parts>
+	</Flow>
+	<Flow priority="2">
+		<Whole>PredObj</Whole>
+		<Parts relation="conjunction">
+			<Part>PredRules</Part>
+			<Part>ObjRules</Part>
+		</Parts>
+	</Flow>
+</Flows>

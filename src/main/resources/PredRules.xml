@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Rules priority="3">
+	<Rule priority="1">
+		<Parent>VP</Parent>
+		<Children relation="disjunction">
+			<Child>VBZ</Child>
+			<Child>VBP</Child>
+			<Child>VB</Child>
+		</Children>
+	</Rule>
+</Rules>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- this is the generic rules, all type of other rules need to process this before they start processing their own rules -->
+<Rules priority="1">
+	<!-- parallel -->
+	<Rule priority="1">
+		<Parent>X</Parent>
+		<Children relation="conjunction">
+			<Child>X</Child>
+			<Child>X</Child>
+		</Children>
+	</Rule>
+	<!-- series -->
+	<Rule priority="2">
+		<Parent>X</Parent>
+		<Children relation="conjunction">
+			<Child>X</Child>
+		</Children>
+	</Rule>
+</Rules>

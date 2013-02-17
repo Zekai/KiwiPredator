@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Rules priority="3">
+	<Rule priority="1">
+		<Parent>NP</Parent>
+		<Children relation="disjunction">
+			<Child>NN</Child>
+			<Child>NNP</Child>
+			<Child>NNS</Child>
+		</Children>
+	</Rule>
+</Rules>
