@@ -3,9 +3,7 @@
 	<Rule priority="1">
 		<Parent>VP</Parent>
 		<Children relation="disjunction">
-			<Child>VBZ</Child>
-			<Child>VBP</Child>
-			<Child>VB</Child>
+			<Child>VB*</Child>
 		</Children>
 	</Rule>
 </Rules>

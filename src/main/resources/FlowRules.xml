@@ -1,17 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+
+This rule depicts the flowchart of the framework. 
+Where all "whole" element must be preprocessed with BasicRules.xml to ensure that there is no parallel or series elements. 
+
+e.g.  
+   S
+ / | \
+S CC  S 
+
+would not be an valid input, which should be striped out as two instances. 
+
+
+* is a wildcart for whatever number of characters, including empty, ? matches single chracter 
+
+-->
+
 <Flows priority="1">
 	<Flow priority="1">
 		<Whole>S</Whole>
 		<Parts relation="conjunction">
-			<Part>SubRules</Part>
-			<Part>PredObj</Part>
+			<Part>NP</Part>
+			<Part>VP</Part>
 		</Parts>
 	</Flow>
 	<Flow priority="2">
-		<Whole>PredObj</Whole>
+		<Whole>VP</Whole>
 		<Parts relation="conjunction">
-			<Part>PredRules</Part>
-			<Part>ObjRules</Part>
+			<Part>V*</Part>
+			<Part>NP</Part>
 		</Parts>
 	</Flow>
 </Flows>

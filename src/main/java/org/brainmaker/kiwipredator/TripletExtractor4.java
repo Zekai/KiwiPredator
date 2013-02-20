@@ -39,7 +39,7 @@ public class TripletExtractor4 {
 		  
 		  Tree vpNode = matcher.getNode("vp");
 		  if(vpNode!=null){
-			  vpNode.pennPrint();
+			  //vpNode.pennPrint();
 			  splitPredObjGroup(vpNode);
 		  }
 		}
@@ -52,7 +52,7 @@ public class TripletExtractor4 {
 		System.out.println("==================splitPredObjGroup");
 		// Create a reusable pattern object
 		 
-		TregexPattern patternMW = TregexPattern.compile("VP << /^VB/=verb");
+		TregexPattern patternMW = TregexPattern.compile("VP < (/^VB/=verb $++ __=obj)");
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(tree);
 		// Iterate over all of the subtrees that matched
@@ -60,8 +60,17 @@ public class TripletExtractor4 {
 			Tree match = matcher.getMatch();
 			//match.pennPrint();
 			 Tree vbNode = matcher.getNode("verb");
+			 
 			  if(vbNode!=null){
+				  System.out.println("Verb groups:");
 				  vbNode.pennPrint();
+			  }
+			  
+			  Tree objNode = matcher.getNode("obj");
+				 
+			  if(objNode!=null){
+				  System.out.println("Object groups");
+				  objNode.pennPrint();
 			  }
 		}
 	}

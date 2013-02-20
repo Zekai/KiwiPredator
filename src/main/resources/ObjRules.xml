@@ -3,9 +3,7 @@
 	<Rule priority="1">
 		<Parent>NP</Parent>
 		<Children relation="disjunction">
-			<Child>NN</Child>
-			<Child>NNP</Child>
-			<Child>NNS</Child>
+			<Child>NN*</Child>
 		</Children>
 	</Rule>
 		<Rule priority="2">

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Rules priority="2">
+	<Rule priority="1">
+		<Parent>S</Parent>
+		<Children relation="conjunction">
+			<Child>NP</Child>
+			<Child>VP</Child>
+		</Children>
+	</Rule>
+</Rules>
