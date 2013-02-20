@@ -21,30 +21,14 @@ public class TripletExtractor4 {
 	
 	public static void main(String[] args) {
 
-		// -f folder
-		// -d document
-		// -r raw
-		// -t tree
-		String type = args[0];
-		String filetype = args[1];
-		String path = args[2];
-
-		if (args.length == 3) {
+		if (args.length == 1) {
 			TripletExtractor4 te = new TripletExtractor4();
-			if (type.equals("-r")) {
-				te.Parser(path);
-			}
+			String path = args[0];
+			te.Parser(path);
 
 		} else {
-
-			System.out.println("-r: indicating it is raw file");
-			System.out.println("-t: indicating it is tree file");
-			System.out.println("-f  path_to_folder");
-			System.out.println("-d  Path_to_fingle_document");
 			System.out.println("Run it like this:");
-			System.out.println("-r -d ./wsj-raw/00/wsj_0001");
-			System.out.println("-t -f ./Penn-trees/00");
-			System.out.println("-t -d ./Penn-trees/00/wsj_0001.mrg");
+			System.out.println("./wsj-raw/00/wsj_0001");
 
 		}
 
