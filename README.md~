@@ -24,5 +24,3 @@ Copyright 2013 Zekai Huang
 Sometimes, evolution sucks! That's why we are building Artificial Intelligence.
 
 KiwiPredator is a first orderized wikipedia, which extracts first order predicate calculus from Wikipedia and stores in <a href="https://github.com/Zekai/EulerDB">EulerDB<a>. 
-
-NOTE: This project is currently nothing more than some scratching code, thus not really following any oop, coding practise. 
