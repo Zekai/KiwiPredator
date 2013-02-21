@@ -16,7 +16,7 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 
 public class TripletExtractor4 {
 	
-	private static boolean sPrintTree = true;
+	private static boolean sPrintTree = false;
 
 	
 	public static void main(String[] args) {
@@ -27,8 +27,7 @@ public class TripletExtractor4 {
 			te.Parser(path);
 
 		} else {
-			System.out.println("Run it like this:");
-			System.out.println("./wsj-raw/00/wsj_0001");
+			System.out.println("You need to specify an input file.");
 
 		}
 
@@ -61,9 +60,9 @@ public class TripletExtractor4 {
 		TregexMatcher matcher = patternMW.matcher(tree);
 		// Iterate over all of the subtrees that matched
 		while (matcher.findNextMatchingNode()) {
-			List<LabeledWord> subWords = new ArrayList<LabeledWord>();
-			List<LabeledWord> preWords = new ArrayList<LabeledWord>();
-			List<LabeledWord> objWords = new ArrayList<LabeledWord>();
+			List<String> subWords = new ArrayList<String>();
+			List<String> preWords = new ArrayList<String>();
+			List<String> objWords = new ArrayList<String>();
 			Tree match = matcher.getMatch();
 			// do what we want to with the subtree
 			// System.out.println(matcher.getVariableString("NP"));
@@ -90,22 +89,22 @@ public class TripletExtractor4 {
 
 	}
 	
-	private void print(List<LabeledWord> subWords,List<LabeledWord> predWords,List<LabeledWord> objWords) {
-		for(LabeledWord sub:subWords){
+	private void print(List<String> subWords,List<String> predWords,List<String> objWords) {
+		for(String sub:subWords){
 			for(int i=0;i<predWords.size();i++){
-				LabeledWord pred = predWords.get(i);
-				LabeledWord obj = objWords.get(i);
-				System.out.println(sub.word()+" "+pred.word()+" "+obj.word());
+				String pred = predWords.get(i);
+				String obj = objWords.get(i);
+				System.out.println(sub+" "+pred+" "+obj);
 			}
 			
 		}
 	}
 	
-	public void splitPredObjGroup(Tree tree,List<LabeledWord> predRes,List<LabeledWord> objRes) {
+	public void splitPredObjGroup(Tree tree,List<String> predRes,List<String> objRes) {
 		System.out.println("==================splitPredObjGroup");
 		// Create a reusable pattern object
 		 
-		TregexPattern patternMW = TregexPattern.compile("VP < (/^VB/=verb $++ (PP|NP|ADJP=obj))");
+		TregexPattern patternMW = TregexPattern.compile("VP < (/^VB/=verb $+ (NP|PP|ADJP=obj))");
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(tree);
 		// Iterate over all of the subtrees that matched
@@ -131,8 +130,8 @@ public class TripletExtractor4 {
 	}
 	
 	
-	public void extractSubject(Tree node,List<LabeledWord> res) {
-		LabeledWord l = null;
+	public void extractSubject(Tree node,List<String> res) {
+		String l = null;
 		if (node.depth() == 2 && node.numChildren() == 1) {
 			 l = getLeaf(node.firstChild());
 		}
@@ -143,16 +142,16 @@ public class TripletExtractor4 {
 		if(l!=null) res.add(l);
 	}
 	
-	public void extractPred(Tree node,List<LabeledWord> res) {
-		LabeledWord l = getLeaf(node);
+	public void extractPred(Tree node,List<String> res) {
+		String l = getLeaf(node);
 		if(l!=null) res.add(l);
 	}
 	
-	public void extractObject(Tree node,List<LabeledWord> res){//PP,NP,ADJP
+	public void extractObject(Tree node,List<String> res){//PP,NP,ADJP
 		String rootType = node.value();
 		if("NP".equals(rootType))
 		{
-			LabeledWord l = getNN(node);
+			String l = getNN(node);
 			if(l!=null) res.add(l);
 		}
 		else if("PP".equals(rootType)){
@@ -164,7 +163,7 @@ public class TripletExtractor4 {
 				String npType = npNode.value();
 				if("NP".equals(npType))
 				{
-					LabeledWord l = getNN(node);
+					String l = getNN(node);
 					if(l!=null) res.add(l);
 				}
 			}
@@ -178,46 +177,54 @@ public class TripletExtractor4 {
 				String npType = jjNode.value();
 				if("JJ".equals(npType))
 				{
-					LabeledWord l = getLeaf(jjNode);
+					String l = getLeaf(jjNode);
 					if(l!=null) res.add(l);
 				}
 			}
 		}
 	}
 	
-	public LabeledWord getNN(Tree node){
-		TregexPattern patternMW = TregexPattern.compile("NP <<- (/^NN/=nn)");
+	public String getNN(Tree node){
+		TregexPattern patternMW = TregexPattern.compile("NP !> PP < (/^NN/=nn)");
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(node);
 		// Iterate over all of the subtrees that matched
-		if (matcher.findNextMatchingNode()) {
+		String res = "";
+		while (matcher.findNextMatchingNode()) {
 			Tree objNode = matcher.getNode("nn");
 			 
 			  if(objNode!=null){
-				  return getLeaf(objNode);
+				  String l =  getLeaf(objNode);
+				  if(l!=null){
+					  if(res.equals(""))
+						  res = l;
+					  else 
+						  res += "_"+l;
+				  }
 			  }
 		}
-		return null;
+		return res;
 	}
 	
-	public LabeledWord getVB(Tree node){
+	public String getVB(Tree node){
 		TregexPattern patternMW = TregexPattern.compile("VP < (/^VB/=vb)");
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(node);
 		// Iterate over all of the subtrees that matched
+		String res = "";
 		if (matcher.findNextMatchingNode()) {
 			Tree objNode = matcher.getNode("vb");
 			 
-			  if(objNode!=null){
-				  return getLeaf(objNode);
+			if(objNode!=null){
+				  res =  getLeaf(objNode);
 			  }
 		}
-		return null;
+		return res;
 	}
 	
-	private LabeledWord getLeaf(Tree node)
+	private String getLeaf(Tree node)
 	{
 			List<LabeledWord> lbs = node.labeledYield();
-			return lbs.get(0);
+			return lbs.get(0).word();
 	}
 }
