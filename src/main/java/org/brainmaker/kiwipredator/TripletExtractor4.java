@@ -7,16 +7,16 @@ import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.LabeledWord;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.process.DocumentPreprocessor;
-import edu.stanford.nlp.trees.AbstractTreebankLanguagePack;
 import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.PennTreebankLanguagePack;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreebankLanguagePack;
 import edu.stanford.nlp.trees.tregex.TregexMatcher;
 import edu.stanford.nlp.trees.tregex.TregexPattern;
-import edu.stanford.nlp.util.Function;
 
 public class TripletExtractor4 {
+	
+	private static boolean sPrintTree = true;
 
 	
 	public static void main(String[] args) {
@@ -48,53 +48,64 @@ public class TripletExtractor4 {
 				continue;
 			System.out.println(sentence.toString());
 			Tree sen = lp.apply(sentence);
-			sen.pennPrint();
+			if(sPrintTree) sen.pennPrint();
 			extractFromTree(sen);
 		}
 	}
 	
-	public void extractFromTree(Tree tree){
-		
-		List<LabeledWord> subWords = new ArrayList<LabeledWord> ();
-		 List<LabeledWord> preWords = new ArrayList<LabeledWord> ();
-		 List<LabeledWord> objWords = new ArrayList<LabeledWord> ();
-		
-		// Create a reusable pattern object 
-		TregexPattern patternMW = TregexPattern.compile("S < VP=vp & < NP=np"); 
-		// Run the pattern on one particular tree 
-		TregexMatcher matcher = patternMW.matcher(tree); 
-		// Iterate over all of the subtrees that matched 
-		while (matcher.findNextMatchingNode()) { 
-		  Tree match = matcher.getMatch(); 
-		  // do what we want to with the subtree 
-		  //System.out.println(matcher.getVariableString("NP"));
-		  
-		  Tree subNode = matcher.getNode("np");
+	public void extractFromTree(Tree tree) {
+
+		// Create a reusable pattern object
+		TregexPattern patternMW = TregexPattern.compile("S < VP=vp & < NP=np");
+		// Run the pattern on one particular tree
+		TregexMatcher matcher = patternMW.matcher(tree);
+		// Iterate over all of the subtrees that matched
+		while (matcher.findNextMatchingNode()) {
+			List<LabeledWord> subWords = new ArrayList<LabeledWord>();
+			List<LabeledWord> preWords = new ArrayList<LabeledWord>();
+			List<LabeledWord> objWords = new ArrayList<LabeledWord>();
+			Tree match = matcher.getMatch();
+			// do what we want to with the subtree
+			// System.out.println(matcher.getVariableString("NP"));
+
+			Tree subNode = matcher.getNode("np");
 			if (subNode != null) {
-				subNode.pennPrint();
-				extractSubject(subNode,subWords);
+				System.out.println("subject groups:");
+				if(sPrintTree) subNode.pennPrint();
+				extractSubject(subNode, subWords);
 			}
-		  
-		  Tree vpNode = matcher.getNode("vp");
-		  if(vpNode!=null){
-			  //vpNode.pennPrint();
-			  splitPredObjGroup(vpNode,preWords,objWords);
-		  }
+
+			Tree vpNode = matcher.getNode("vp");
+			if (vpNode != null) {
+				//vpNode.pennPrint();
+				splitPredObjGroup(vpNode, preWords, objWords);
+			}
+			//System.out.println(subWords);
+			//System.out.println(preWords);
+			//System.out.println(objWords);
+			print(subWords, preWords, objWords);
 		}
-		
-		System.out.println(subWords.toString());
-		System.out.println(preWords.toString());
-		System.out.println(objWords.toString());
-		
+
 		System.out.println("\n\n");
 
+	}
+	
+	private void print(List<LabeledWord> subWords,List<LabeledWord> predWords,List<LabeledWord> objWords) {
+		for(LabeledWord sub:subWords){
+			for(int i=0;i<predWords.size();i++){
+				LabeledWord pred = predWords.get(i);
+				LabeledWord obj = objWords.get(i);
+				System.out.println(sub.word()+" "+pred.word()+" "+obj.word());
+			}
+			
+		}
 	}
 	
 	public void splitPredObjGroup(Tree tree,List<LabeledWord> predRes,List<LabeledWord> objRes) {
 		System.out.println("==================splitPredObjGroup");
 		// Create a reusable pattern object
 		 
-		TregexPattern patternMW = TregexPattern.compile("VP < (/^VB/=verb $++ __=obj)");
+		TregexPattern patternMW = TregexPattern.compile("VP < (/^VB/=verb $++ (PP|NP|ADJP=obj))");
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(tree);
 		// Iterate over all of the subtrees that matched
@@ -105,15 +116,15 @@ public class TripletExtractor4 {
 			 
 			  if(vbNode!=null){
 				  System.out.println("Verb groups:");
-				  vbNode.pennPrint();
-				  extractPred(tree,predRes);
+				  if(sPrintTree) vbNode.pennPrint();
+				  extractPred(vbNode,predRes);
 			  }
 			  
 			  Tree objNode = matcher.getNode("obj");
 				 
 			  if(objNode!=null){
 				  System.out.println("Object groups");
-				  objNode.pennPrint();
+				  if(sPrintTree) objNode.pennPrint();
 				  extractObject(objNode,objRes);
 			  }
 		}
@@ -133,7 +144,7 @@ public class TripletExtractor4 {
 	}
 	
 	public void extractPred(Tree node,List<LabeledWord> res) {
-		LabeledWord l = getVB(node);
+		LabeledWord l = getLeaf(node);
 		if(l!=null) res.add(l);
 	}
 	
