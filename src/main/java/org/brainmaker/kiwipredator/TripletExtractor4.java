@@ -16,7 +16,7 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 
 public class TripletExtractor4 {
 	
-	private static boolean sPrintTree = false;
+	private static boolean sPrintTree = true;
 
 	
 	public static void main(String[] args) {
@@ -48,8 +48,28 @@ public class TripletExtractor4 {
 			System.out.println(sentence.toString());
 			Tree sen = lp.apply(sentence);
 			if(sPrintTree) sen.pennPrint();
-			extractFromTree(sen);
+			List<Tree> res = splitTree(sen);
+			for(Tree t:res){
+				extractFromTree(t);
+			}
 		}
+	}
+	
+	public List<Tree> splitTree(Tree tree){
+		TregexPattern patternMW = TregexPattern.compile("S < S=s1 < CC < S=s2");
+		// Run the pattern on one particular tree
+		TregexMatcher matcher = patternMW.matcher(tree);
+		// Iterate over all of the subtrees that matched
+		List<Tree> results = new ArrayList<Tree>();
+		while (matcher.findNextMatchingNode()) {
+			Tree tree1 = matcher.getNode("s1");
+			if(tree1!=null) results.add(tree1);
+			
+			Tree tree2 = matcher.getNode("s2");
+			if(tree2!=null) results.add(tree2);
+			
+		}
+		return results;
 	}
 	
 	public void extractFromTree(Tree tree) {
@@ -69,8 +89,11 @@ public class TripletExtractor4 {
 
 			Tree subNode = matcher.getNode("np");
 			if (subNode != null) {
-				System.out.println("subject groups:");
-				if(sPrintTree) subNode.pennPrint();
+				
+				if(sPrintTree){
+					System.out.println("subject groups:");
+					subNode.pennPrint();
+				}
 				extractSubject(subNode, subWords);
 			}
 
@@ -91,9 +114,11 @@ public class TripletExtractor4 {
 	
 	private void print(List<String> subWords,List<String> predWords,List<String> objWords) {
 		for(String sub:subWords){
+			int count = objWords.size();
 			for(int i=0;i<predWords.size();i++){
 				String pred = predWords.get(i);
-				String obj = objWords.get(i);
+				String obj = "";
+				if(count>i) obj = objWords.get(i);
 				System.out.println(sub+" "+pred+" "+obj);
 			}
 			
@@ -114,16 +139,22 @@ public class TripletExtractor4 {
 			 Tree vbNode = matcher.getNode("verb");
 			 
 			  if(vbNode!=null){
-				  System.out.println("Verb groups:");
-				  if(sPrintTree) vbNode.pennPrint();
+				  
+				  if(sPrintTree){
+					  System.out.println("Verb groups:");
+					  vbNode.pennPrint();
+				  }
 				  extractPred(vbNode,predRes);
 			  }
 			  
 			  Tree objNode = matcher.getNode("obj");
 				 
 			  if(objNode!=null){
-				  System.out.println("Object groups");
-				  if(sPrintTree) objNode.pennPrint();
+				  
+				  if(sPrintTree){
+					  System.out.println("Object groups");
+					  objNode.pennPrint();
+				  }
 				  extractObject(objNode,objRes);
 			  }
 		}
@@ -136,7 +167,7 @@ public class TripletExtractor4 {
 			 l = getLeaf(node.firstChild());
 		}
 		else {
-			 l = getNN(node);
+			 l = getNN(node,true);
 		}
 		
 		if(l!=null) res.add(l);
@@ -151,7 +182,7 @@ public class TripletExtractor4 {
 		String rootType = node.value();
 		if("NP".equals(rootType))
 		{
-			String l = getNN(node);
+			String l = getNN(node,true);
 			if(l!=null) res.add(l);
 		}
 		else if("PP".equals(rootType)){
@@ -163,7 +194,7 @@ public class TripletExtractor4 {
 				String npType = npNode.value();
 				if("NP".equals(npType))
 				{
-					String l = getNN(node);
+					String l = getNN(node,false);
 					if(l!=null) res.add(l);
 				}
 			}
@@ -184,8 +215,16 @@ public class TripletExtractor4 {
 		}
 	}
 	
-	public String getNN(Tree node){
-		TregexPattern patternMW = TregexPattern.compile("NP !> PP < (/^NN/=nn)");
+	public String getNN(Tree node,boolean excludePP){
+		String pattern;
+		if(excludePP){
+			pattern = "NP !> PP < (/^NN/=nn)";
+		}
+		else
+		{
+			pattern = "NP < (/^NN/=nn)";
+		}
+		TregexPattern patternMW = TregexPattern.compile(pattern);
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(node);
 		// Iterate over all of the subtrees that matched
