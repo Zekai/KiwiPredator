@@ -48,27 +48,29 @@ public class TripletExtractor4 {
 			System.out.println(sentence.toString());
 			Tree sen = lp.apply(sentence);
 			if(sPrintTree) sen.pennPrint();
-			List<Tree> res = splitTree(sen);
+			List<Tree> res = splitTree(sen,"S");
 			for(Tree t:res){
 				extractFromTree(t);
 			}
 		}
 	}
 	
-	public List<Tree> splitTree(Tree tree){
-		TregexPattern patternMW = TregexPattern.compile("S < S=s1 < CC < S=s2");
+	public List<Tree> splitTree(Tree tree,String pos){
+		String pattern = pos + " < (" +pos+"=p1"+ " $++ CC $++ "+pos+"=p2)";
+		TregexPattern patternMW = TregexPattern.compile(pattern);
 		// Run the pattern on one particular tree
 		TregexMatcher matcher = patternMW.matcher(tree);
 		// Iterate over all of the subtrees that matched
 		List<Tree> results = new ArrayList<Tree>();
 		while (matcher.findNextMatchingNode()) {
-			Tree tree1 = matcher.getNode("s1");
+			Tree tree1 = matcher.getNode("p1");
 			if(tree1!=null) results.add(tree1);
 			
-			Tree tree2 = matcher.getNode("s2");
+			Tree tree2 = matcher.getNode("p2");
 			if(tree2!=null) results.add(tree2);
 			
 		}
+		if(results.size()==0) results.add(tree);
 		return results;
 	}
 	
@@ -94,13 +96,16 @@ public class TripletExtractor4 {
 					System.out.println("subject groups:");
 					subNode.pennPrint();
 				}
-				extractSubject(subNode, subWords);
+				List<Tree> res = splitTree(subNode,"NP");
+				for(Tree t:res){
+					extractSubject(t, subWords);
+				}
 			}
 
 			Tree vpNode = matcher.getNode("vp");
-			if (vpNode != null) {
-				//vpNode.pennPrint();
-				splitPredObjGroup(vpNode, preWords, objWords);
+			List<Tree> res = splitTree(vpNode,"VP");
+			for(Tree t:res){
+				splitPredObjGroup(t, preWords, objWords);
 			}
 			//System.out.println(subWords);
 			//System.out.println(preWords);
