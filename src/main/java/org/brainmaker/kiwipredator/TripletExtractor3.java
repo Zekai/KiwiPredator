@@ -59,11 +59,11 @@ public class TripletExtractor3 {
 		// -d document
 		// -r raw
 		// -t tree
-		String type = args[0];
-		String filetype = args[1];
-		String path = args[2];
 
 		if (args.length == 3) {
+			String type = args[0];
+			String filetype = args[1];
+			String path = args[2];
 			TripletExtractor3 te = new TripletExtractor3();
 			if (type.equals("-r")) {
 				te.Parser(path);
