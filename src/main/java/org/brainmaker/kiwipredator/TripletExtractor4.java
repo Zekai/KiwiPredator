@@ -16,8 +16,7 @@ import edu.stanford.nlp.trees.tregex.TregexPattern;
 
 public class TripletExtractor4 {
 	
-	private static boolean sPrintTree = true;
-
+	private static boolean sPrintTree = false;
 	
 	public static void main(String[] args) {
 
@@ -55,6 +54,13 @@ public class TripletExtractor4 {
 		}
 	}
 	
+	/**
+	 * Split a compound sentence into sentences. 
+	 * @param tree
+	 * @param pos
+	 * @return
+	 */
+	
 	public List<Tree> splitTree(Tree tree,String pos){
 		String pattern = pos + " < (" +pos+"=p1"+ " $++ CC $++ "+pos+"=p2)";
 		TregexPattern patternMW = TregexPattern.compile(pattern);
@@ -73,6 +79,7 @@ public class TripletExtractor4 {
 		if(results.size()==0) results.add(tree);
 		return results;
 	}
+	
 	
 	public void extractFromTree(Tree tree) {
 
