@@ -26,3 +26,34 @@ Sometimes, evolution sucks! That's why we are building Artificial Intelligence.
 KiwiPredator is a first orderized wikipedia, which extracts first order predicate calculus from Wikipedia and stores in <a href="https://github.com/Zekai/EulerDB">EulerDB<a>. 
 
 NOTE: This project is currently nothing more than some scratching code, thus not really following any oop, coding practise. 
+
+============
+
+1. Architecture
+
+<img src="http://www.brainmaker.org/wp-content/uploads/2013/07/architecture.png" alt="Architeture">
+
+2. Components
+
+2.1 Parser
+
+Parser is the component that converts sentence into a parser tree. Which is done by Stanford Parser. 
+
+2.2 Extractor
+
+Extractor is the component that extract subject, predict and object from a sentence. It contains two main parts -- a markup language called tree-based regular expression language (TREL), its interpreter and a tregex engine which perform regular expression on a parser tree.
+
+TREL has two characteristics.
+
+* Markup Language
+* Inheritance
+
+There are three main types of ERML. Splitting, Pruning and Replacing.
+
+* Splitting: Mainly used for splitting one tree into several subtrees.
+* Pruning: Mainly used for pruning uninterested parts.
+* Replacing: Mainly used for replacing pronoun, tense and number type.
+
+2.3 Evaluator
+
+Evaluator reviews the hypothesis and either takes it as a new item of knowledge or discard it. In either case, it will send feedback to the TREL. 
