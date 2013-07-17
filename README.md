@@ -41,14 +41,12 @@ Parser is the component that converts sentence into a parser tree. Which is done
 
 2.2 Extractor
 
-Extractor is the component that extract subject, predict and object from a sentence. It contains two main parts -- a markup language called tree-based regular expression language (TREL), its interpreter and a tregex engine which perform regular expression on a parser tree.
-
-TREL has two characteristics.
+Extractor is the component that extracts subject, predict and object from a sentence. It contains two main parts -- a tree-based regular expression engine and a interpreter that convert the rule definition language into tregex format. The Tree-based Regular definition language (TRDL) has two characteristics.
 
 * Markup Language
 * Inheritance
 
-There are three main types of ERML. Splitting, Pruning and Replacing.
+There are three main types of TRDL. Splitting, Pruning and Replacing.
 
 * Splitting: Mainly used for splitting one tree into several subtrees.
 * Pruning: Mainly used for pruning uninterested parts.
@@ -56,4 +54,4 @@ There are three main types of ERML. Splitting, Pruning and Replacing.
 
 2.3 Evaluator
 
-Evaluator reviews the hypothesis and either takes it as a new item of knowledge or discard it. In either case, it will send feedback to the TREL. 
+Evaluator reviews the hypothesis and either takes it as a new item of knowledge or discard it. In either case, it will send feedback to the TRDL. 
